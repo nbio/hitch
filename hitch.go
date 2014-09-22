@@ -13,7 +13,7 @@ type Hitch struct {
 	middleware []func(http.Handler) http.Handler
 }
 
-// NewHitch initializes a new Hitch.
+// New initializes a new Hitch.
 func New() *Hitch {
 	return &Hitch{
 		Router: httprouter.New(),
@@ -33,13 +33,6 @@ func (h *Hitch) UseHandler(handler http.Handler) {
 			next.ServeHTTP(w, req)
 		})
 	})
-}
-
-func wrap(handler http.Handler) httprouter.Handle {
-	return func(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
-		httpcontext.Set(req, paramsKey, params)
-		handler.ServeHTTP(w, req)
-	}
 }
 
 // Handle registers a handler for the given method and path.
@@ -92,6 +85,13 @@ func (h *Hitch) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 type key int
 
 const paramsKey key = 1
+
+func wrap(handler http.Handler) httprouter.Handle {
+	return func(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
+		httpcontext.Set(req, paramsKey, params)
+		handler.ServeHTTP(w, req)
+	}
+}
 
 // Params returns the httprouter.Params for req.
 func Params(req *http.Request) httprouter.Params {
