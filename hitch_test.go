@@ -2,44 +2,67 @@ package hitch
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"runtime"
 	"testing"
 
-	"github.com/nbio/httpcontext"
 	"github.com/nbio/st"
 )
 
-func TestGet(t *testing.T) {
-	server := createServer()
-	defer server.Close()
+func TestHome(t *testing.T) {
+	s := newTestServer(t)
+	_, res := s.request("GET", "/")
+	defer res.Body.Close()
+	expectHeaders(t, res)
+}
 
-	print(server.URL + "\n")
-	req, err := http.NewRequest("GET", server.URL, nil)
+func TestEcho(t *testing.T) {
+	s := newTestServer(t)
+	_, res := s.request("GET", "/api/echo/hip-hop")
+	defer res.Body.Close()
+	expectHeaders(t, res)
+	body, _ := ioutil.ReadAll(res.Body)
+	st.Assert(t, string(body), "hip-hop")
+}
+
+func expectHeaders(t *testing.T, res *http.Response) {
+	st.Expect(t, res.Header.Get("Content-Type"), "text/plain")
+	st.Expect(t, res.Header.Get("X-Awesome"), "awesome")
+}
+
+// testServer
+
+type testServer struct {
+	*httptest.Server
+	t *testing.T
+}
+
+func (s *testServer) request(method, path string) (*http.Request, *http.Response) {
+	req, err := http.NewRequest(method, s.URL+path, nil)
 	if err != nil {
-		t.Fatal(err)
+		s.t.Fatal(err)
 	}
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		t.Fatal(err)
+		s.t.Fatal(err)
 	}
-	defer res.Body.Close()
-
-	assertHeaders(t, res)
+	return req, res
 }
 
-func assertHeaders(t *testing.T, res *http.Response) {
-	st.Assert(t, res.Header.Get("Content-Type"), "text/plain")
-	st.Assert(t, res.Header.Get("X-Awesome"), "awesome")
-}
-
-func createServer() *httptest.Server {
+func newTestServer(t *testing.T) *testServer {
 	h := New()
 	h.Use(logger, plaintext)
 	h.UseHandler(http.HandlerFunc(awesome))
 	h.HandleFunc("GET", "/", home)
-	h.Get("/echo/:phrase", http.HandlerFunc(echo))
-	return httptest.NewServer(h)
+	api := New()
+	api.Get("/api/echo/:phrase", http.HandlerFunc(echo))
+	h.Next(api)
+
+	s := &testServer{httptest.NewServer(h), t}
+	runtime.SetFinalizer(s, func(s *testServer) { s.Server.Close() })
+	return s
 }
 
 func logger(next http.Handler) http.Handler {
@@ -65,5 +88,5 @@ func home(w http.ResponseWriter, req *http.Request) {
 }
 
 func echo(w http.ResponseWriter, req *http.Request) {
-	fmt.Fprint(w, httpcontext.GetString(req, "phrase"))
+	fmt.Fprint(w, Params(req).ByName("phrase"))
 }
