@@ -35,6 +35,11 @@ func (h *Hitch) UseHandler(handler http.Handler) {
 	})
 }
 
+// Next registers an http.Handler as a fallback/not-found handler.
+func (h *Hitch) Next(handler http.Handler) {
+	h.Router.NotFound = handler.ServeHTTP
+}
+
 // Handle registers a handler for the given method and path.
 func (h *Hitch) Handle(method, path string, handler http.Handler) {
 	h.Router.Handle(method, path, wrap(handler))

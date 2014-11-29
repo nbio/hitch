@@ -10,7 +10,7 @@ import (
 	"github.com/nbio/st"
 )
 
-func TestResponse(t *testing.T) {
+func TestGet(t *testing.T) {
 	server := createServer()
 	defer server.Close()
 
@@ -19,19 +19,24 @@ func TestResponse(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	resp, err := http.DefaultClient.Do(req)
+	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer resp.Body.Close()
+	defer res.Body.Close()
 
-	st.Assert(t, resp.Header.Get("Content-Type"), "text/plain")
+	assertHeaders(t, res)
+}
+
+func assertHeaders(t *testing.T, res *http.Response) {
+	st.Assert(t, res.Header.Get("Content-Type"), "text/plain")
+	st.Assert(t, res.Header.Get("X-Awesome"), "awesome")
 }
 
 func createServer() *httptest.Server {
 	h := New()
 	h.Use(logger, plaintext)
-	h.Use(awesome)
+	h.UseHandler(http.HandlerFunc(awesome))
 	h.HandleFunc("GET", "/", home)
 	h.Get("/echo/:phrase", http.HandlerFunc(echo))
 	return httptest.NewServer(h)
@@ -47,14 +52,12 @@ func logger(next http.Handler) http.Handler {
 func plaintext(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
+		next.ServeHTTP(w, req)
 	})
 }
 
-func awesome(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		w.Header().Set("X-Awesome", "awesome")
-		next.ServeHTTP(w, req)
-	})
+func awesome(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("X-Awesome", "awesome")
 }
 
 func home(w http.ResponseWriter, req *http.Request) {
