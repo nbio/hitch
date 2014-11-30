@@ -58,9 +58,9 @@ func newTestServer(t *testing.T) *testServer {
 	h.HandleFunc("GET", "/", home)
 	api := New()
 	api.Get("/api/echo/:phrase", http.HandlerFunc(echo))
-	h.Next(api)
+	h.Next(api.Handler())
 
-	s := &testServer{httptest.NewServer(h), t}
+	s := &testServer{httptest.NewServer(h.Handler()), t}
 	runtime.SetFinalizer(s, func(s *testServer) { s.Server.Close() })
 	return s
 }

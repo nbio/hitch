@@ -68,13 +68,13 @@ func (h *Hitch) Delete(path string, handler http.Handler) { h.Handle("DELETE", p
 // Options registers a OPTIONS handler for the given path.
 func (h *Hitch) Options(path string, handler http.Handler) { h.Handle("OPTIONS", path, handler) }
 
-// ServeHTTP implements http.Handler.
-func (h *Hitch) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	next := http.Handler(h.Router)
+// Handler returns an http.Handler for the embedded router and middleware.
+func (h *Hitch) Handler() http.Handler {
+	handler := http.Handler(h.Router)
 	for i := len(h.middleware) - 1; i >= 0; i-- {
-		next = h.middleware[i](next)
+		handler = h.middleware[i](handler)
 	}
-	next.ServeHTTP(w, req)
+	return handler
 }
 
 type key int
