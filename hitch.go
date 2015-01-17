@@ -9,14 +9,16 @@ import (
 
 // Hitch ties httprouter, httpcontext, and middleware up in a bow.
 type Hitch struct {
-	Router *httprouter.Router
+	Router     *httprouter.Router
 	middleware []func(http.Handler) http.Handler
 }
 
 // New initializes a new Hitch.
 func New() *Hitch {
+	r := httprouter.New()
+	r.HandleMethodNotAllowed = false // may cause problems otherwise
 	return &Hitch{
-		Router: httprouter.New(),
+		Router: r,
 	}
 }
 
