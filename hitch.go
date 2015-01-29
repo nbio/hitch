@@ -43,32 +43,47 @@ func (h *Hitch) Next(handler http.Handler) {
 }
 
 // Handle registers a handler for the given method and path.
-func (h *Hitch) Handle(method, path string, handler http.Handler) {
+func (h *Hitch) Handle(method, path string, handler http.Handler, middleware ...func(http.Handler) http.Handler) {
+	for i := len(middleware) - 1; i >= 0; i-- {
+		handler = middleware[i](handler)
+	}
 	h.Router.Handle(method, path, wrap(handler))
 }
 
 // HandleFunc registers a func handler for the given method and path.
-func (h *Hitch) HandleFunc(method, path string, handler func(http.ResponseWriter, *http.Request)) {
-	h.Router.Handle(method, path, wrap(http.HandlerFunc(handler)))
+func (h *Hitch) HandleFunc(method, path string, handler func(http.ResponseWriter, *http.Request), middleware ...func(http.Handler) http.Handler) {
+	h.Handle(method, path, http.HandlerFunc(handler), middleware...)
 }
 
 // Get registers a GET handler for the given path.
-func (h *Hitch) Get(path string, handler http.Handler) { h.Handle("GET", path, handler) }
+func (h *Hitch) Get(path string, handler http.Handler, middleware ...func(http.Handler) http.Handler) {
+	h.Handle("GET", path, handler, middleware...)
+}
 
 // Put registers a PUT handler for the given path.
-func (h *Hitch) Put(path string, handler http.Handler) { h.Handle("PUT", path, handler) }
+func (h *Hitch) Put(path string, handler http.Handler, middleware ...func(http.Handler) http.Handler) {
+	h.Handle("PUT", path, handler, middleware...)
+}
 
 // Post registers a POST handler for the given path.
-func (h *Hitch) Post(path string, handler http.Handler) { h.Handle("POST", path, handler) }
+func (h *Hitch) Post(path string, handler http.Handler, middleware ...func(http.Handler) http.Handler) {
+	h.Handle("POST", path, handler, middleware...)
+}
 
 // Patch registers a PATCH handler for the given path.
-func (h *Hitch) Patch(path string, handler http.Handler) { h.Handle("PATCH", path, handler) }
+func (h *Hitch) Patch(path string, handler http.Handler, middleware ...func(http.Handler) http.Handler) {
+	h.Handle("PATCH", path, handler, middleware...)
+}
 
 // Delete registers a DELETE handler for the given path.
-func (h *Hitch) Delete(path string, handler http.Handler) { h.Handle("DELETE", path, handler) }
+func (h *Hitch) Delete(path string, handler http.Handler, middleware ...func(http.Handler) http.Handler) {
+	h.Handle("DELETE", path, handler, middleware...)
+}
 
 // Options registers a OPTIONS handler for the given path.
-func (h *Hitch) Options(path string, handler http.Handler) { h.Handle("OPTIONS", path, handler) }
+func (h *Hitch) Options(path string, handler http.Handler, middleware ...func(http.Handler) http.Handler) {
+	h.Handle("OPTIONS", path, handler, middleware...)
+}
 
 // Handler returns an http.Handler for the embedded router and middleware.
 func (h *Hitch) Handler() http.Handler {
