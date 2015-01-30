@@ -27,6 +27,15 @@ func TestEcho(t *testing.T) {
 	st.Assert(t, string(body), "hip-hop")
 }
 
+func TestRouteMiddleware(t *testing.T) {
+	s := newTestServer(t)
+	_, res := s.request("GET", "/route_middleware")
+	defer res.Body.Close()
+	expectHeaders(t, res)
+	body, _ := ioutil.ReadAll(res.Body)
+	st.Assert(t, string(body), "middleware1 -> middleware2 -> Hello, world! -> middleware2 -> middleware1")
+}
+
 func expectHeaders(t *testing.T, res *http.Response) {
 	st.Expect(t, res.Header.Get("Content-Type"), "text/plain")
 	st.Expect(t, res.Header.Get("X-Awesome"), "awesome")
@@ -59,6 +68,7 @@ func newTestServer(t *testing.T) *testServer {
 	api := New()
 	api.Get("/api/echo/:phrase", http.HandlerFunc(echo))
 	h.Next(api.Handler())
+	h.Get("/route_middleware", http.HandlerFunc(home), testMiddleware("middleware1"), testMiddleware("middleware2"))
 
 	s := &testServer{httptest.NewServer(h.Handler()), t}
 	runtime.SetFinalizer(s, func(s *testServer) { s.Server.Close() })
@@ -89,4 +99,14 @@ func home(w http.ResponseWriter, req *http.Request) {
 
 func echo(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprint(w, Params(req).ByName("phrase"))
+}
+
+func testMiddleware(name string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			fmt.Fprint(w, name+" -> ")
+			next.ServeHTTP(w, req)
+			fmt.Fprint(w, " -> "+name)
+		})
+	}
 }
