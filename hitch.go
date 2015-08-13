@@ -2,10 +2,15 @@ package hitch
 
 import (
 	"net/http"
+	"log"
+	"os"
 
 	"github.com/julienschmidt/httprouter"
+
 	"github.com/nbio/httpcontext"
 )
+
+
 
 // Hitch ties httprouter, httpcontext, and middleware up in a bow.
 type Hitch struct {
@@ -17,9 +22,20 @@ type Hitch struct {
 func New() *Hitch {
 	r := httprouter.New()
 	r.HandleMethodNotAllowed = false // may cause problems otherwise
+
+
 	return &Hitch{
 		Router: r,
+
 	}
+
+}
+
+func (h *Hitch) Run(addr string) {
+	l := log.New(os.Stdout, "[hitch] ", 0)
+	l.Printf("listening on %s", addr)
+	l.Fatal(http.ListenAndServe(addr, h.Handler()))
+
 }
 
 // Use installs one or more middleware in the Hitch request cycle.
@@ -93,6 +109,9 @@ func (h *Hitch) Handler() http.Handler {
 	}
 	return handler
 }
+
+
+
 
 type key int
 
