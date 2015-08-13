@@ -19,7 +19,7 @@ type Hitch struct {
 }
 
 // New initializes a new Hitch.
-func New(addr string) *Hitch {
+func New() *Hitch {
 	r := httprouter.New()
 	r.HandleMethodNotAllowed = false // may cause problems otherwise
 
