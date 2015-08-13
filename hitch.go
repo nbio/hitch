@@ -22,6 +22,12 @@ func New() *Hitch {
 	}
 }
 
+func (h *Hitch) Run(addr string) {
+	l := log.New(os.Stdout, "[hitch] ", 0)
+	l.Printf("listening on %s", addr)
+	l.Fatal(http.ListenAndServe(addr, n))
+}
+
 // Use installs one or more middleware in the Hitch request cycle.
 func (h *Hitch) Use(middleware ...func(http.Handler) http.Handler) {
 	h.middleware = append(h.middleware, middleware...)
