@@ -16,23 +16,26 @@ import (
 type Hitch struct {
 	Router     *httprouter.Router
 	middleware []func(http.Handler) http.Handler
-	handler http.Handler
 }
 
 // New initializes a new Hitch.
-func New(handler...http.Handler) *Hitch {
+func New(addr string) *Hitch {
 	r := httprouter.New()
 	r.HandleMethodNotAllowed = false // may cause problems otherwise
+
+
 	return &Hitch{
 		Router: r,
+
 	}
+
 }
 
 func (h *Hitch) Run(addr string) {
-	hndlr := h.handler
 	l := log.New(os.Stdout, "[hitch] ", 0)
 	l.Printf("listening on %s", addr)
-	l.Fatal(http.ListenAndServe(addr, hndlr))
+	l.Fatal(http.ListenAndServe(addr, h.Handler()))
+
 }
 
 // Use installs one or more middleware in the Hitch request cycle.
