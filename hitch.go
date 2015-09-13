@@ -58,6 +58,7 @@ func (h *Hitch) HandleFunc(method, path string, handler func(http.ResponseWriter
 // Get registers a GET handler for the given path.
 func (h *Hitch) Get(path string, handler http.Handler, middleware ...func(http.Handler) http.Handler) {
 	h.Handle("GET", path, handler, middleware...)
+	h.Handle("HEAD", path, handler, middleware...)
 }
 
 // Put registers a PUT handler for the given path.
