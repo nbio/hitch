@@ -1,0 +1,11 @@
+[[constraint]]
+  branch = "master"
+  name = "github.com/julienschmidt/httprouter"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/nbio/httpcontext"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/nbio/st"
