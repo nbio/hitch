@@ -1,13 +1,13 @@
 package hitch
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/nbio/httpcontext"
 )
 
-// Hitch ties httprouter, httpcontext, and middleware up in a bow.
+// Hitch ties httprouter, context, and middleware up in a bow.
 type Hitch struct {
 	Router     *httprouter.Router
 	middleware []func(http.Handler) http.Handler
@@ -100,17 +100,13 @@ const paramsKey key = 1
 
 func wrap(handler http.Handler) httprouter.Handle {
 	return func(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
-		httpcontext.Set(req, paramsKey, params)
-		handler.ServeHTTP(w, req)
+		ctx := context.WithValue(req.Context(), paramsKey, params)
+		handler.ServeHTTP(w, req.WithContext(ctx))
 	}
 }
 
 // Params returns the httprouter.Params for req.
 func Params(req *http.Request) httprouter.Params {
-	if value, ok := httpcontext.GetOk(req, paramsKey); ok {
-		if params, ok := value.(httprouter.Params); ok {
-			return params
-		}
-	}
-	return httprouter.Params{}
+	// zero value (httprouter.Params{}) is returned when type assertion failed
+	return req.Context().Value(paramsKey).(httprouter.Params)
 }
