@@ -101,8 +101,7 @@ const paramsKey key = 1
 func wrap(handler http.Handler) httprouter.Handle {
 	return func(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
 		ctx := context.WithValue(req.Context(), paramsKey, params)
-		*req = *req.WithContext(ctx)
-		handler.ServeHTTP(w, req)
+		handler.ServeHTTP(w, req.WithContext(ctx))
 	}
 }
 
