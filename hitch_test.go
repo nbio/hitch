@@ -7,8 +7,6 @@ import (
 	"net/http/httptest"
 	"runtime"
 	"testing"
-
-	"github.com/nbio/st"
 )
 
 func TestHome(t *testing.T) {
@@ -24,7 +22,10 @@ func TestEcho(t *testing.T) {
 	defer res.Body.Close()
 	expectHeaders(t, res)
 	body, _ := ioutil.ReadAll(res.Body)
-	st.Assert(t, string(body), "hip-hop")
+
+	if g, e := string(body), "hip-hop"; g != e {
+		t.Fatalf("should be == \n \thave: %s\n\twant: %s", g, e)
+	}
 }
 
 func TestRouteMiddleware(t *testing.T) {
@@ -33,16 +34,22 @@ func TestRouteMiddleware(t *testing.T) {
 	defer res.Body.Close()
 	expectHeaders(t, res)
 	body, _ := ioutil.ReadAll(res.Body)
-	st.Assert(t, string(body), "middleware1 -> middleware2 -> Hello, world! -> middleware2 -> middleware1")
+
+	if g, e := string(body), "middleware1 -> middleware2 -> Hello, world! -> middleware2 -> middleware1"; g != e {
+		t.Fatalf("should be == \n \thave: %s\n\twant: %s", g, e)
+	}
 }
 
 func expectHeaders(t *testing.T, res *http.Response) {
-	st.Expect(t, res.Header.Get("Content-Type"), "text/plain")
-	st.Expect(t, res.Header.Get("X-Awesome"), "awesome")
+	if g, e := res.Header.Get("Content-Type"), "text/plain"; g != e {
+		t.Errorf("should be == \n \thave: %s\n\twant: %s", g, e)
+	}
+	if g, e := res.Header.Get("X-Awesome"), "awesome"; g != e {
+		t.Errorf("should be == \n \thave: %s\n\twant: %s", g, e)
+	}
 }
 
 // testServer
-
 type testServer struct {
 	*httptest.Server
 	t *testing.T
