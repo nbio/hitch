@@ -1,7 +1,6 @@
 package hitch
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -47,7 +46,7 @@ func (h *Hitch) Handle(method, path string, handler http.Handler, middleware ...
 	for i := len(middleware) - 1; i >= 0; i-- {
 		handler = middleware[i](handler)
 	}
-	h.Router.Handle(method, path, wrap(handler))
+	h.Router.Handler(method, path, handler)
 }
 
 // HandleFunc registers a func handler for the given method and path.
@@ -87,26 +86,15 @@ func (h *Hitch) Options(path string, handler http.Handler, middleware ...func(ht
 
 // Handler returns an http.Handler for the embedded router and middleware.
 func (h *Hitch) Handler() http.Handler {
-	handler := http.Handler(h.Router)
+	var handler http.Handler = h.Router
 	for i := len(h.middleware) - 1; i >= 0; i-- {
 		handler = h.middleware[i](handler)
 	}
 	return handler
 }
 
-type key int
-
-const paramsKey key = 1
-
-func wrap(handler http.Handler) httprouter.Handle {
-	return func(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
-		ctx := context.WithValue(req.Context(), paramsKey, params)
-		handler.ServeHTTP(w, req.WithContext(ctx))
-	}
-}
-
 // Params returns the httprouter.Params for req.
+// This is just a passthrough to httprouter.ParamsFromContext.
 func Params(req *http.Request) httprouter.Params {
-	// zero value (httprouter.Params{}) is returned when type assertion failed
-	return req.Context().Value(paramsKey).(httprouter.Params)
+	return httprouter.ParamsFromContext(req.Context())
 }
